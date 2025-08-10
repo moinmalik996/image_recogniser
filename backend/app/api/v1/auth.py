@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-from app.models.user import UserCreate, UserRead, Token
+from app.models.user import UserLogin, UserCreate, UserRead, Token
 from app.services.auth import create_user, login_user
 from app.db.session import get_session
 
@@ -20,8 +20,8 @@ async def signup(user_data: UserCreate, db: AsyncSession = Depends(get_session))
     return user
 
 @router.post("/login", response_model=Token)
-async def login(email: str, password: str, db: AsyncSession = Depends(get_session)):
-    user = await login_user(email, password, db)
+async def login(login_data: UserLogin, db: AsyncSession = Depends(get_session)):
+    user = await login_user(login_data.email, login_data.password, db)
     if not user:
         raise HTTPException(status_code=400, detail="Invalid credentials")
     access_token = create_access_token(data={"sub": str(user.id)})

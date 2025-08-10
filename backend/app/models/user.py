@@ -11,6 +11,11 @@ class User(BaseModel, table=True):
     hashed_password: str
     
     
+class UserLogin(BaseModel):
+    email: str
+    password: str
+    
+    
 class UserCreate(SQLModel):
     email: str
     password: str
