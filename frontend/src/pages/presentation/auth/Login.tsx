@@ -40,73 +40,110 @@ interface ILoginProps {
 }
 const Login: FC<ILoginProps> = ({ isSignUp }) => {
 	const { setUser } = useContext(AuthContext);
-
 	const { darkModeStatus } = useDarkMode();
-
 	const [signInPassword, setSignInPassword] = useState<boolean>(false);
 	const [singUpStatus, setSingUpStatus] = useState<boolean>(!!isSignUp);
+	const [isLoading, setIsLoading] = useState<boolean>(false);
+	const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
 	const navigate = useNavigate();
 	const handleOnClick = useCallback(() => navigate('/'), [navigate]);
 
-	const usernameCheck = (username: string) => {
-		return !!getUserDataWithUsername(username);
-	};
-
-	const passwordCheck = (username: string, password: string) => {
-		return getUserDataWithUsername(username).password === password;
-	};
+	React.useEffect(() => {
+		const token = localStorage.getItem('access_token');
+		if (token) {
+			navigate('/');
+		}
+	}, [navigate]);
 
 	const formik = useFormik({
 		enableReinitialize: true,
-		initialValues: {
-			loginUsername: USERS.JOHN.username,
-			loginPassword: USERS.JOHN.password,
-		},
+		   initialValues: {
+			   loginUsername: '',
+			   loginPassword: '',
+			   // For sign up
+			   signupEmail: '',
+			   signupName: '',
+			   signupPassword: '',
+		   },
 		validate: (values) => {
-			const errors: { loginUsername?: string; loginPassword?: string } = {};
-
-			if (!values.loginUsername) {
-				errors.loginUsername = 'Required';
-			}
-
-			if (!values.loginPassword) {
-				errors.loginPassword = 'Required';
-			}
-
+			const errors: any = {};
+			if (!singUpStatus) {
+				if (!values.loginUsername) errors.loginUsername = 'Required';
+				if (!values.loginPassword) errors.loginPassword = 'Required';
+			   } else {
+				   if (!values.signupEmail) errors.signupEmail = 'Required';
+				   if (!values.signupName) errors.signupName = 'Required';
+				   if (!values.signupPassword) errors.signupPassword = 'Required';
+			   }
 			return errors;
 		},
 		validateOnChange: false,
-		onSubmit: (values) => {
-			if (usernameCheck(values.loginUsername)) {
-				if (passwordCheck(values.loginUsername, values.loginPassword)) {
-					if (setUser) {
-						setUser(values.loginUsername);
+		onSubmit: async (values) => {
+			setErrorMsg(null);
+			if (!singUpStatus) {
+				// LOGIN
+				setIsLoading(true);
+				try {
+					const res = await fetch('http://localhost:8000/auth/login', {
+						method: 'POST',
+						headers: { 'Content-Type': 'application/json' },
+						body: JSON.stringify({
+							email: values.loginUsername,
+							password: values.loginPassword,
+						}),
+					});
+					const data = await res.json();
+					if (res.ok) {
+						if (data.access_token) {
+							localStorage.setItem('access_token', data.access_token);
+						}
+						if (setUser) setUser(values.loginUsername);
+						handleOnClick();
+					} else {
+						setErrorMsg(data.message || 'Login failed.');
 					}
-
-					handleOnClick();
-				} else {
-					formik.setFieldError('loginPassword', 'Username and password do not match.');
+				} catch (err) {
+					setErrorMsg('Network error.');
+				} finally {
+					setIsLoading(false);
 				}
+			} else {
+				// SIGN UP
+				setIsLoading(true);
+				   try {
+					   const res = await fetch('http://localhost:8000/auth/signup', {
+						   method: 'POST',
+						   headers: { 'Content-Type': 'application/json' },
+						   body: JSON.stringify({
+							   email: values.signupEmail,
+							   password: values.signupPassword,
+							   username: values.signupName,
+						   }),
+					   });
+					   const data = await res.json();
+					   if (res.ok) {
+						   if (setUser) setUser(data.user || values.signupEmail);
+						   handleOnClick();
+					   } else {
+						   setErrorMsg(data.message || 'Sign up failed.');
+					   }
+				   } catch (err) {
+					   setErrorMsg('Network error.');
+				   } finally {
+					   setIsLoading(false);
+				   }
 			}
 		},
 	});
 
-	const [isLoading, setIsLoading] = useState<boolean>(false);
 	const handleContinue = () => {
-		setIsLoading(true);
-		setTimeout(() => {
-			if (
-				!Object.keys(USERS).find(
-					(f) => USERS[f].username.toString() === formik.values.loginUsername,
-				)
-			) {
-				formik.setFieldError('loginUsername', 'No such user found in the system.');
-			} else {
-				setSignInPassword(true);
-			}
-			setIsLoading(false);
-		}, 1000);
+		// For login: show password field after username
+		if (!formik.values.loginUsername) {
+			formik.setFieldError('loginUsername', 'Required');
+			return;
+		}
+		setSignInPassword(true);
 	};
 
 	return (
@@ -170,17 +207,13 @@ const Login: FC<ILoginProps> = ({ isSignUp }) => {
 
 								<LoginHeader isNewUser={singUpStatus} />
 
-								<Alert isLight icon='Lock' isDismissible>
-									<div className='row'>
-										<div className='col-12'>
-											<strong>Username:</strong> {USERS.JOHN.username}
-										</div>
-										<div className='col-12'>
-											<strong>Password:</strong> {USERS.JOHN.password}
-										</div>
-									</div>
-								</Alert>
-								<form className='row g-4'>
+								{errorMsg && (
+									<Alert isLight color="danger" icon="Lock" isDismissible>
+										{errorMsg}
+									</Alert>
+								)}
+
+								<form className='row g-4' onSubmit={formik.handleSubmit}>
 									{singUpStatus ? (
 										<>
 											<div className='col-12'>
@@ -188,7 +221,17 @@ const Login: FC<ILoginProps> = ({ isSignUp }) => {
 													id='signup-email'
 													isFloating
 													label='Your email'>
-													<Input type='email' autoComplete='email' />
+													<Input
+														type='email'
+														autoComplete='email'
+														name='signupEmail'
+														value={formik.values.signupEmail}
+														isTouched={formik.touched.signupEmail}
+														invalidFeedback={formik.errors.signupEmail}
+														isValid={formik.isValid}
+														onChange={formik.handleChange}
+														onBlur={formik.handleBlur}
+													/>
 												</FormGroup>
 											</div>
 											<div className='col-12'>
@@ -196,17 +239,19 @@ const Login: FC<ILoginProps> = ({ isSignUp }) => {
 													id='signup-name'
 													isFloating
 													label='Your name'>
-													<Input autoComplete='given-name' />
+													<Input
+														name='signupName'
+														autoComplete='given-name'
+														value={formik.values.signupName}
+														isTouched={formik.touched.signupName}
+														invalidFeedback={formik.errors.signupName}
+														isValid={formik.isValid}
+														onChange={formik.handleChange}
+														onBlur={formik.handleBlur}
+													/>
 												</FormGroup>
 											</div>
-											<div className='col-12'>
-												<FormGroup
-													id='signup-surname'
-													isFloating
-													label='Your surname'>
-													<Input autoComplete='family-name' />
-												</FormGroup>
-											</div>
+											   {/* Surname field removed as per backend requirements */}
 											<div className='col-12'>
 												<FormGroup
 													id='signup-password'
@@ -214,7 +259,14 @@ const Login: FC<ILoginProps> = ({ isSignUp }) => {
 													label='Password'>
 													<Input
 														type='password'
+														name='signupPassword'
 														autoComplete='password'
+														value={formik.values.signupPassword}
+														isTouched={formik.touched.signupPassword}
+														invalidFeedback={formik.errors.signupPassword}
+														isValid={formik.isValid}
+														onChange={formik.handleChange}
+														onBlur={formik.handleBlur}
 													/>
 												</FormGroup>
 											</div>
@@ -222,7 +274,10 @@ const Login: FC<ILoginProps> = ({ isSignUp }) => {
 												<Button
 													color='info'
 													className='w-100 py-3'
-													onClick={handleOnClick}>
+													type='submit'
+													isDisable={isLoading}
+												>
+													{isLoading && <Spinner isSmall inButton isGrow />}
 													Sign Up
 												</Button>
 											</div>
@@ -239,11 +294,10 @@ const Login: FC<ILoginProps> = ({ isSignUp }) => {
 													})}>
 													<Input
 														autoComplete='username'
+														name='loginUsername'
 														value={formik.values.loginUsername}
 														isTouched={formik.touched.loginUsername}
-														invalidFeedback={
-															formik.errors.loginUsername
-														}
+														invalidFeedback={formik.errors.loginUsername}
 														isValid={formik.isValid}
 														onChange={formik.handleChange}
 														onBlur={formik.handleBlur}
@@ -266,12 +320,11 @@ const Login: FC<ILoginProps> = ({ isSignUp }) => {
 													})}>
 													<Input
 														type='password'
+														name='loginPassword'
 														autoComplete='current-password'
 														value={formik.values.loginPassword}
 														isTouched={formik.touched.loginPassword}
-														invalidFeedback={
-															formik.errors.loginPassword
-														}
+														invalidFeedback={formik.errors.loginPassword}
 														validFeedback='Looks good!'
 														isValid={formik.isValid}
 														onChange={formik.handleChange}
@@ -284,18 +337,20 @@ const Login: FC<ILoginProps> = ({ isSignUp }) => {
 													<Button
 														color='warning'
 														className='w-100 py-3'
-														isDisable={!formik.values.loginUsername}
-														onClick={handleContinue}>
-														{isLoading && (
-															<Spinner isSmall inButton isGrow />
-														)}
+														isDisable={!formik.values.loginUsername || isLoading}
+														onClick={handleContinue}
+													>
+														{isLoading && <Spinner isSmall inButton isGrow />}
 														Continue
 													</Button>
 												) : (
 													<Button
 														color='warning'
 														className='w-100 py-3'
-														onClick={formik.handleSubmit}>
+														type='submit'
+														isDisable={isLoading}
+													>
+														{isLoading && <Spinner isSmall inButton isGrow />}
 														Login
 													</Button>
 												)}

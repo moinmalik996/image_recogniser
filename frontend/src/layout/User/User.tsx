@@ -128,6 +128,7 @@ const User = () => {
 								if (setUser) {
 									setUser('');
 								}
+								localStorage.removeItem('access_token');
 								if (width < Number(import.meta.env.VITE_MOBILE_BREAKPOINT_SIZE)) {
 									setAsideStatus(false);
 								}

@@ -12,12 +12,29 @@ interface IAuthContextProviderProps {
 	children: ReactNode;
 }
 export const AuthContextProvider: FC<IAuthContextProviderProps> = ({ children }) => {
-	const [user, setUser] = useState<string>(localStorage.getItem('facit_authUsername') || '');
+	const [user, setUser] = useState<string>(() => localStorage.getItem('facit_authUsername') || '');
 	const [userData, setUserData] = useState<Partial<IUserProps>>({});
 
+	// Always sync user to localStorage
 	useEffect(() => {
-		localStorage.setItem('facit_authUsername', user);
+		if (user) {
+			localStorage.setItem('facit_authUsername', user);
+		} else {
+			localStorage.removeItem('facit_authUsername');
+		}
 	}, [user]);
+
+	// Restore user from localStorage on mount and on storage events
+	useEffect(() => {
+		const syncUser = () => {
+			const storedUser = localStorage.getItem('facit_authUsername') || '';
+			setUser(storedUser);
+		};
+		window.addEventListener('storage', syncUser);
+		return () => {
+			window.removeEventListener('storage', syncUser);
+		};
+	}, []);
 
 	useEffect(() => {
 		if (user !== '') {
