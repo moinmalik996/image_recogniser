@@ -1,14 +1,17 @@
 from uuid import UUID
-
-
-from sqlmodel import SQLModel, Field
+from typing import TYPE_CHECKING
+from sqlmodel import SQLModel, Field, Relationship
 from .base import BaseModel
 
+
+if TYPE_CHECKING:
+    from .image import Image
 
 class User(BaseModel, table=True):
     username: str = Field(index=True, nullable=False)
     email: str = Field(index=True, nullable=False, unique=True)
     hashed_password: str
+    images: list["Image"] = Relationship(back_populates="user")
     
     
 class UserLogin(SQLModel):

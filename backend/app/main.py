@@ -1,13 +1,16 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from scalar_fastapi import get_scalar_api_reference
 
 from app.db.lifespan import life_span_handeler
 
 from app.api.v1 import auth
+from app.api.v1 import image
 
 app = FastAPI(lifespan=life_span_handeler)
 app.include_router(auth.router, prefix="/auth", tags=["auth"])
+app.include_router(image.router, prefix="/image", tags=["image"])
 
 # Allow requests from localhost:3000
 origins = [
@@ -22,6 +25,8 @@ app.add_middleware(
     allow_methods=["*"],    # Allow all HTTP methods
     allow_headers=["*"],    # Allow all headers
 )
+
+app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
 @app.get('/')
 async def home():
