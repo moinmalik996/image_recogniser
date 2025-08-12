@@ -10,10 +10,19 @@ class Settings(BaseSettings):
     DB_HOST: Optional[str] = "localhost"
     DB_PORT: Optional[int] = 5432
     DB_NAME: Optional[str] = None
-    
+
     SECRET_KEY: Optional[str]
     JWT_ALGORITHM: Optional[str]
     ACCESS_TOKEN_EXPIRE_MINUTES: Optional[int]
+
+    # S3 settings
+    AWS_ACCESS_KEY_ID: Optional[str]
+    AWS_SECRET_ACCESS_KEY: Optional[str]
+    AWS_REGION: Optional[str]
+    AWS_S3_BUCKET_NAME: Optional[str]
+
+    # Environment mode
+    ENV: str = "local"  # or "production"
 
     
     @property
@@ -26,7 +35,7 @@ class Settings(BaseSettings):
         )
         
     class Config:
-        env_file = ".env"
+        env_file = "../.env"
         
 @lru_cache
 def get_settings() -> Settings:

@@ -7,15 +7,17 @@ from app.db.lifespan import life_span_handeler
 
 from app.api.v1 import auth
 from app.api.v1 import image
+from app.api.v1.s3 import router as s3_router
 
 app = FastAPI(lifespan=life_span_handeler)
 app.include_router(auth.router, prefix="/auth", tags=["auth"])
 app.include_router(image.router, prefix="/image", tags=["image"])
+app.include_router(s3_router, prefix="/s3", tags=["s3"])
 
 # Allow requests from localhost:3000
 origins = [
-    "http://localhost:5173",
-    "http://127.0.0.1:5173"
+    "http://localhost:3000",
+    "http://127.0.0.1:3000"
 ]
 
 app.add_middleware(
