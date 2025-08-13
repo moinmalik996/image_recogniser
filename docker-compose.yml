@@ -14,11 +14,11 @@ services:
       
   backend:
     build:
-      context: ./backend
+      context: .
     env_file:
       - .env
     volumes:
-      - ./backend/uploads:/app/uploads
+      - ./uploads:/app/uploads
     ports:
       - "8000:8000"
     depends_on:

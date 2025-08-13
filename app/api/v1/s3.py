@@ -25,8 +25,13 @@ def generate_presigned_url(
         presigned_post = s3_client.generate_presigned_post(
             Bucket=settings.AWS_S3_BUCKET_NAME,
             Key=filename,
-            Fields={"Content-Type": content_type},
-            Conditions=[["content-length-range", 0, 10485760]],  # 10MB max
+            Fields={
+                "Content-Type": content_type
+            },
+            Conditions=[
+                {"Content-Type": content_type},
+                ["content-length-range", 0, 10485760]
+            ],  # 10MB max
             ExpiresIn=3600,
         )
         return presigned_post
