@@ -5,6 +5,8 @@ from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
+    # CORS origins (comma-separated string)
+    CORS_ORIGINS: Optional[str] = None
     PROJECT_NAME: Optional[str]  = "My FastAPI Project"
     DB_USER: Optional[str] = None
     DB_PASSWORD: Optional[str] = None
