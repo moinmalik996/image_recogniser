@@ -1,3 +1,4 @@
+import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -14,11 +15,16 @@ app.include_router(auth.router, prefix="/auth", tags=["auth"])
 app.include_router(image.router, prefix="/image", tags=["image"])
 app.include_router(s3_router, prefix="/s3", tags=["s3"])
 
-# Allow requests from localhost:3000
-origins = [
-    "http://localhost:3000",
-    "http://127.0.0.1:3000"
-]
+
+# Allow requests from environment variable, fallback to localhost:3000 and 127.0.0.1:3000
+origins_env = os.getenv("CORS_ORIGINS")
+if origins_env:
+    origins = [origin.strip() for origin in origins_env.split(",") if origin.strip()]
+else:
+    origins = [
+        "http://localhost:3000",
+        "http://127.0.0.1:3000"
+    ]
 
 app.add_middleware(
     CORSMiddleware,
