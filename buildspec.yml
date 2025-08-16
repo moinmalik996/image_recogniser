@@ -6,7 +6,7 @@ phases:
       - echo $AWS_DEFAULT_REGION
       - echo $AWS_ACCOUNT_ID
       - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com
-      - export BACKEND_REPO="$AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/my-backend"
+      - export BACKEND_REPO="$AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/image-recogniser-backend"
   build:
     commands:
       - docker build -t $BACKEND_REPO:latest .
