@@ -3,11 +3,13 @@ phases:
   pre_build:
     commands:
       - echo Logging in to Amazon ECR...
+      - echo $AWS_DEFAULT_REGION
+      - echo $AWS_ACCOUNT_ID
       - aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 329599655290.dkr.ecr.us-east-1.amazonaws.com
       - export BACKEND_REPO="329599655290.dkr.ecr.us-east-1.amazonaws.com/my-backend"
   build:
     commands:
-      - docker build -t $BACKEND_REPO:latest ./backend
+      - docker build -t $BACKEND_REPO:latest .
       - docker push $BACKEND_REPO:latest
   post_build:
     commands:
