@@ -6,7 +6,7 @@ from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
     # CORS origins (comma-separated string)
-    CORS_ORIGINS: Optional[str] = None
+    CORS_ORIGINS: Optional[str] = ["http://localhost:3000", "http://127.0.0.1:3000"]
     PROJECT_NAME: Optional[str]  = "My FastAPI Project"
     DB_USER: Optional[str] = None
     DB_PASSWORD: Optional[str] = None
@@ -37,8 +37,7 @@ class Settings(BaseSettings):
         if not all([self.DB_USER, self.DB_PASSWORD, self.DB_NAME]):
             raise ValueError("Database credentials are not properly set")
         
-        print(f"postgresql+asyncpg://{self.DB_USER}:{self.DB_PASSWORD}"
-            f"@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}")
+        print(f"CORS origins loaded: {settings.CORS_ORIGINS}")
         return (
             f"postgresql+asyncpg://{self.DB_USER}:{self.DB_PASSWORD}"
             f"@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
