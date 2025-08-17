@@ -11,9 +11,9 @@ phases:
     commands:
       - docker build --platform linux/arm64 -t $BACKEND_REPO:latest .
       - docker push $BACKEND_REPO:latest
-#   post_build:
-#     commands:
-#       - echo Writing imagedefinitions.json...
-#       - printf '[{"name":"backend","imageUri":"%s"}]' $BACKEND_REPO:latest > imagedefinitions.json
-# artifacts:
-#   files: imagedefinitions.json
+  post_build:
+    commands:
+      - echo Writing imagedefinitions.json...
+      - printf '[{"name":"backend","imageUri":"%s"}]' $BACKEND_REPO:latest > imagedefinitions.json
+artifacts:
+  files: imagedefinitions.json
