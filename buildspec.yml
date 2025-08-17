@@ -9,11 +9,11 @@ phases:
       - export BACKEND_REPO="$AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/image-recogniser-backend"
   build:
     commands:
-      - docker build -t $BACKEND_REPO:latest .
+      - docker build --platform linux/amd64,linux/arm64 -t $BACKEND_REPO:latest .
       - docker push $BACKEND_REPO:latest
-  post_build:
-    commands:
-      - echo Writing imagedefinitions.json...
-      - printf '[{"name":"backend","imageUri":"%s"}]' $BACKEND_REPO:latest > imagedefinitions.json
-artifacts:
-  files: imagedefinitions.json
+#   post_build:
+#     commands:
+#       - echo Writing imagedefinitions.json...
+#       - printf '[{"name":"backend","imageUri":"%s"}]' $BACKEND_REPO:latest > imagedefinitions.json
+# artifacts:
+#   files: imagedefinitions.json
