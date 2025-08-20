@@ -9,11 +9,13 @@ from app.db.lifespan import life_span_handeler
 from app.api.v1 import auth
 from app.api.v1 import image
 from app.api.v1.s3 import router as s3_router
+from app.api.v1.jobs import router as jobs_router
 
 app = FastAPI(lifespan=life_span_handeler)
 app.include_router(auth.router, prefix="/auth", tags=["auth"])
 app.include_router(image.router, prefix="/image", tags=["image"])
 app.include_router(s3_router, prefix="/s3", tags=["s3"])
+app.include_router(jobs_router, prefix="/jobs", tags=["jobs"])
 
 
 

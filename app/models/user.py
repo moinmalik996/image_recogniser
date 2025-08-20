@@ -6,12 +6,14 @@ from .base import BaseModel
 
 if TYPE_CHECKING:
     from .image import Image
+    from .jobs import UserJobAction
 
 class User(BaseModel, table=True):
     username: str = Field(index=True, nullable=False)
     email: str = Field(index=True, nullable=False, unique=True)
     hashed_password: str
     images: list["Image"] = Relationship(back_populates="user")
+    job_actions: list["UserJobAction"] = Relationship(back_populates="user")
     
     
 class UserLogin(SQLModel):

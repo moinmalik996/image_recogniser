@@ -4,8 +4,6 @@ from sqlmodel import SQLModel
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
 
 from app.core.config import settings
-from app.models.user import User #just importing it to ensure the model is registered with SQLModel
-
 
 engine = create_async_engine(settings.DATABASE_URL, echo=True)
 
