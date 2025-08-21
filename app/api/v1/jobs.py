@@ -42,6 +42,7 @@ def format_date(dt: date) -> str:
 async def list_jobs(
     sponsored: Optional[bool] = Query(None, description="Filter by sponsorship"),
     sort: Optional[str] = Query("asc", regex="^(asc|desc)$", description="Sort by closing date: 'asc' or 'desc'"),
+    search: Optional[str] = Query(None, description="Search by job title"),
     db: AsyncSession = Depends(get_session),
     current_user=Depends(get_current_user),
     pagination: PaginationParams = Depends(pagination_params)
@@ -58,6 +59,8 @@ async def list_jobs(
         base_query = base_query.where(NHSJob.sponsored == sponsored)
     if excluded_job_ids:
         base_query = base_query.where(NHSJob.id.notin_(excluded_job_ids))
+    if search:
+        base_query = base_query.where(NHSJob.title.ilike(f"%{search}%"))
 
     # Get total count before pagination
     count_result = await db.execute(base_query.with_only_columns(NHSJob.id))
