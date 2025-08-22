@@ -8,9 +8,6 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from .user import User
 
-
-
-
 class JobActionEnum(str, Enum):
     APPLIED = "applied"
     IGNORED = "ignored"
