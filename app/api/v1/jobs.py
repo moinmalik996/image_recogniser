@@ -62,6 +62,10 @@ async def list_jobs(
     if search:
         base_query = base_query.where(NHSJob.title.ilike(f"%{search}%"))
 
+    # Filter jobs where closing_date is in the future (>= now)
+    now = datetime.now()
+    base_query = base_query.where(NHSJob.closing_date >= now)
+
     # Get total count before pagination
     count_result = await db.execute(base_query.with_only_columns(NHSJob.id))
     total = len(count_result.scalars().all())
