@@ -1,15 +1,16 @@
+import boto3
+import boto3.dynamodb.types
+from typing import Any
 from fastapi import APIRouter, Depends, UploadFile, File, HTTPException, status, Path
 from sqlalchemy.future import select
+from sqlmodel.ext.asyncio.session import AsyncSession
+
 from app.services.image import save_image
 from app.core.config import settings
-import boto3
 from app.models import Image, ImageRead
 from app.models.user import User
 from app.api.v1.auth import get_current_user
-from typing import Any
-from sqlmodel.ext.asyncio.session import AsyncSession
 from app.db.session import get_session
-# ...existing code...
 
 router = APIRouter()
 
@@ -113,3 +114,72 @@ async def list_my_images(
             presigned_url=presigned_url
         ))
     return image_reads
+
+
+def extract_strings(data, keys=("Categories", "Name", "Parents")):
+    """
+    Recursively extract all string values for the given keys from nested dict/list structures.
+    Returns a dict of key -> set of found strings.
+    """
+    result = {k: set() for k in keys}
+    if isinstance(data, dict):
+        for k, v in data.items():
+            for key in keys:
+                if k == key:
+                    if isinstance(v, str):
+                        result[key].add(v)
+                    elif isinstance(v, list):
+                        for item in v:
+                            if isinstance(item, dict) and "Name" in item:
+                                result[key].add(item["Name"])
+                            elif isinstance(item, str):
+                                result[key].add(item)
+                    elif isinstance(v, dict) and "Name" in v:
+                        result[key].add(v["Name"])
+            # Recurse into all values
+            sub_result = extract_strings(v, keys)
+            for key in keys:
+                result[key].update(sub_result[key])
+    elif isinstance(data, list):
+        for item in data:
+            sub_result = extract_strings(item, keys)
+            for key in keys:
+                result[key].update(sub_result[key])
+    return result
+
+@router.get("/get-image-analysis/{image_id}")
+async def get_image_analysis(
+    image_id: str = Path(..., description="The image ID to look up in DynamoDB"),
+    current_user: User = Depends(get_current_user)
+):
+    # Create DynamoDB client
+    dynamodb = boto3.client(
+        "dynamodb",
+        aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
+        aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
+        region_name=settings.AWS_REGION,
+    )
+
+    # If your table uses user_id as partition key and image_id as sort key:
+    response = dynamodb.get_item(
+        TableName="imageanalysis",
+        Key={
+            "image-id": {"S": image_id}
+        }
+    )
+
+    item = response.get("Item")
+    if not item or "results" not in item:
+        raise HTTPException(status_code=404, detail="Analysis not found for this image_id")
+
+    deserializer = boto3.dynamodb.types.TypeDeserializer()
+    results = deserializer.deserialize(item["results"])
+
+    # Extract comma-separated strings
+    extracted = extract_strings(results)
+    response_strings = {k: ", ".join(sorted(v)) for k, v in extracted.items()}
+
+    return {
+        "image_id": image_id,
+        "extracted": response_strings
+    }
